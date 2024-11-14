@@ -17,12 +17,14 @@ public class MenuManager : MonoBehaviour
     AudioManager audioManager;
     private void Awake()
     {
-        audioManager.Play("BackgroundMusic");
         CurrentLevel = PlayerPrefs.GetInt(LevelKey, 0);
         LoadandApplyLevel();
     }
 
-
+    private void Start()
+    {
+        audioManager.Play("BackgroundMusic");
+    }
     public void LoadandApplyLevel()
     {
         if (PlayerPrefs.HasKey("LvlDataSaved"))

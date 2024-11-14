@@ -58,7 +58,7 @@ public class GameplayController : MonoBehaviour
         totalMatchesRequired = gameSprites.Count;
         maxScore = totalMatchesRequired * 10;
         gameActive = true;
-        remainingTime = timeLimit; // Set the initial timer value from the current level
+        remainingTime = timeLimit;
         UpdateTimerUI();
         UpdateScoreUI();
     }
@@ -71,7 +71,6 @@ public class GameplayController : MonoBehaviour
     }
     private void LoadCardSprites()
     {
-        // Path to be replaced when actual UI elements added
         cardSprites = Resources.LoadAll<Sprite>("Sprites/Characters");
     }
 
@@ -128,11 +127,9 @@ public class GameplayController : MonoBehaviour
         isFirstGuess = true;
         firstGuessIndex = index;
         firstGuessCardName = gameSprites[index].name;
-        //cards[firstGuessIndex].image.sprite = gameSprites[firstGuessIndex];
         cards[firstGuessIndex].GetComponent<Animation>().Play("CardEntry");
-        cards[firstGuessIndex].GetComponent<CardData>().DisableDefaultImage(); //Changed
-        cards[firstGuessIndex].GetComponent<CardData>().CharacterImage.sprite = gameSprites[firstGuessIndex]; //Changed
-        Debug.Log("First");
+        cards[firstGuessIndex].GetComponent<CardData>().DisableDefaultImage();
+        cards[firstGuessIndex].GetComponent<CardData>().CharacterImage.sprite = gameSprites[firstGuessIndex];
     }
 
     private void SecondGuess(int index)
@@ -140,10 +137,9 @@ public class GameplayController : MonoBehaviour
         isSecondGuess = true;
         secondGuessIndex = index;
         secondGuessCardName = gameSprites[index].name;
-        //cards[secondGuessIndex].image.sprite = gameSprites[secondGuessIndex];
         cards[secondGuessIndex].GetComponent<Animation>().Play("CardEntry");
-        cards[secondGuessIndex].GetComponent<CardData>().DisableDefaultImage(); //Changed
-        cards[secondGuessIndex].GetComponent<CardData>().CharacterImage.sprite = gameSprites[secondGuessIndex]; //Changed
+        cards[secondGuessIndex].GetComponent<CardData>().DisableDefaultImage();
+        cards[secondGuessIndex].GetComponent<CardData>().CharacterImage.sprite = gameSprites[secondGuessIndex];
     }
 
     private IEnumerator CheckMatch()
@@ -180,8 +176,6 @@ public class GameplayController : MonoBehaviour
 
     private void ResetUnmatchedCards()
     {
-        //cards[firstGuessIndex].image.sprite = cardBackground;
-        //cards[secondGuessIndex].image.sprite = cardBackground;
         cards[firstGuessIndex].GetComponent<CardData>().ResetUnmatched();
         cards[secondGuessIndex].GetComponent<CardData>().ResetUnmatched();
     }
@@ -281,7 +275,6 @@ public class GameplayController : MonoBehaviour
         {
             remainingTime = 0;
             EndGame(false);
-            //ResetGameplay();
         }
     }
 
