@@ -9835,7 +9835,7 @@ MonoBehaviour:
     source: {fileID: 0}
   - name: BackgroundMusic
     clip: {fileID: 8300000, guid: 47dd04b22c93a014ebd8a729f147a696, type: 3}
-    volume: 0.031
+    volume: 0.063
     loop: 0
     source: {fileID: 0}
   - name: Finish
