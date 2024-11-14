@@ -25,6 +25,7 @@ public class GameplayController : MonoBehaviour
     public TextMeshProUGUI scoreText;
     public GameObject FinishScreen;
     public GameObject FailedScreen;
+    public GameObject PauseScreen;
     [Space(20)]
     [Header("Score Data")]
     private int score = 0;
@@ -35,8 +36,11 @@ public class GameplayController : MonoBehaviour
     [SerializeField] private TextMeshProUGUI timerText;
     private float remainingTime;
     public bool gameActive;
-
-
+    public int CurrentLevel;
+    string LevelKey = "CurrentLevel";
+    public LoadCards LevelLoader;
+    public LevelData[] AllLevels;
+    public int LoadedLevel;
     private void Awake()
     {
         LoadCardSprites();
@@ -49,7 +53,7 @@ public class GameplayController : MonoBehaviour
         AddCardListeners();
         SetupGameCards();
         ShuffleCards(gameSprites);
-        totalMatchesRequired = gameSprites.Count / 2;
+        totalMatchesRequired = gameSprites.Count;
         maxScore = totalMatchesRequired * 10;
         gameActive = true;
         remainingTime = timeLimit; // Set the initial timer value from the current level
@@ -103,11 +107,9 @@ public class GameplayController : MonoBehaviour
     private void HandleCardClick()
     {
         int cardIndex = int.Parse(EventSystem.current.currentSelectedGameObject.name);
-        Debug.Log("FirstF");
         if (!isFirstGuess)
         {
             FirstGuess(cardIndex);
-            Debug.Log("FirstF");
         }
         else if (!isSecondGuess)
         {
@@ -143,10 +145,11 @@ public class GameplayController : MonoBehaviour
 
     private IEnumerator CheckMatch()
     {
-        yield return new WaitForSeconds(1f);
+        
 
         if (firstGuessCardName == secondGuessCardName)
         {
+            yield return new WaitForSeconds(0.5f);
             DisableMatchedCards();
             correctGuesses++;
             IncreaseScore();
@@ -154,10 +157,11 @@ public class GameplayController : MonoBehaviour
         }
         else
         {
+            yield return new WaitForSeconds(0.8f);
             ResetUnmatchedCards();
         }
 
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(0.4f);
         isFirstGuess = isSecondGuess = false;
     }
 
@@ -179,9 +183,8 @@ public class GameplayController : MonoBehaviour
 
     private void CheckGameCompletion()
     {
-        if (correctGuesses == totalMatchesRequired)
+        if (correctGuesses == totalMatchesRequired / 2)
         {
-            //finish game menu to be added here
             StartCoroutine(ShowFinishScreen());
             gameActive = false;
         }
@@ -199,7 +202,7 @@ public class GameplayController : MonoBehaviour
     }
     private void IncreaseScore()
     {
-        score += 10; // Increment score by 10 (or any other desired value)
+        score += 10;
         UpdateScoreUI();
     }
 
@@ -209,25 +212,35 @@ public class GameplayController : MonoBehaviour
             scoreText.text = "Score: " + score.ToString();
         if (TargetGuess != null)
             TargetGuess.text = totalMatchesRequired.ToString();
+        if (CurrentGuess != null)
+            CurrentGuess.text = totalGuesses.ToString();
     }
     private void AssignStarsBasedOnScore()
     {
-        float scorePercentage = (float)score / maxScore;
-        int starCount = 0;
+        float efficiencyRatio = (float)totalMatchesRequired / totalGuesses;
+        foreach (GameObject star in starImages)
+        {
+            star.SetActive(false);
+        }
 
-        if (scorePercentage >= 0.8f) // 80% and above
-            starCount = 3;
-        else if (scorePercentage >= 0.5f) // 50-79%
-            starCount = 2;
-        else // Below 50%
-            starCount = 1;
-        Debug.Log("Score Percentage " + scorePercentage.ToString());
-        StarCount = starCount;
+        if (efficiencyRatio >= 0.9f)
+        {
+            StarCount = 3;
+        }
+        else if (efficiencyRatio >= 0.7f)
+        {
+            StarCount = 2;
+        }
+        else
+        {
+            StarCount = 1;
+        }
     }
     IEnumerator ShowFinishScreen()
     {
         FinishScreen.SetActive(true);
         AssignStarsBasedOnScore();
+        ResetStarUI();
         yield return new WaitForSeconds(0.3f);
         for (int i = 0; i < starImages.Length; i++)
         {
@@ -236,6 +249,21 @@ public class GameplayController : MonoBehaviour
             else
                 starImages[i].SetActive(false);
             yield return new WaitForSeconds(0.3f);
+        }
+        
+        CurrentLevel = PlayerPrefs.GetInt(LevelKey);
+        if(LoadedLevel < CurrentLevel)
+        {
+            CurrentLevel = LoadedLevel;
+            CurrentLevel++;
+        }
+        else
+        {
+            AllLevels[CurrentLevel].locked = false;
+            AllLevels[CurrentLevel].SaveLevelData();
+            if (CurrentLevel < 7) //Currently 7 levels added only
+                CurrentLevel++;
+            PlayerPrefs.SetInt(LevelKey, CurrentLevel);
         }
     }
     private void UpdateTimer()
@@ -246,7 +274,8 @@ public class GameplayController : MonoBehaviour
         if (remainingTime <= 0)
         {
             remainingTime = 0;
-            EndGame(false); // End the game with fail screen
+            EndGame(false);
+            //ResetGameplay();
         }
     }
 
@@ -258,7 +287,7 @@ public class GameplayController : MonoBehaviour
 
     private void EndGame(bool win)
     {
-        gameActive = false; // Stop the timer and game actions
+        gameActive = false;
 
         if (win)
         {
@@ -272,4 +301,88 @@ public class GameplayController : MonoBehaviour
         }
     }
 
+    public void ResetGameplay()
+    {
+        foreach (var card in cards)
+        {
+            Destroy(card.gameObject);
+        }
+
+        cards.Clear();
+        gameSprites.Clear();
+
+        score = 0;
+        correctGuesses = 0;
+        totalGuesses = 0;
+        remainingTime = timeLimit;
+        isFirstGuess = isSecondGuess = false;
+        firstGuessIndex = 0;
+        secondGuessIndex = 0;
+        UpdateScoreUI();
+        UpdateTimerUI();
+        
+
+        foreach (var card in cards)
+        {
+            Destroy(card.gameObject);
+        }
+
+        cards.Clear();
+        
+    }
+    private void ResetStarUI()
+    {
+        foreach (GameObject star in starImages)
+        {
+            star.SetActive(false);
+        }
+    }
+    public void PlayNextLevel()
+    {
+        LevelLoader.LoadGameData(CurrentLevel);
+        ResetGameplay();
+        FinishScreen.SetActive(false);
+        FailedScreen.SetActive(false);
+        PauseScreen.SetActive(false);
+    }
+    public void RetryCurrentLevel()
+    {
+        CurrentLevel = PlayerPrefs.GetInt(LevelKey);
+        LevelLoader.LoadGameData(CurrentLevel);
+        ResetGameplay();
+        FinishScreen.SetActive(false);
+        FailedScreen.SetActive(false);
+        PauseScreen.SetActive(false);
+    }
+    public void BackToHome()
+    {
+        ResetGameplay();
+        FinishScreen.SetActive(false);
+        FailedScreen.SetActive(false);
+    }
+    public void PauseGame()
+    {
+        PauseScreen.SetActive(true);
+        Time.timeScale = 0;
+    }
+    public void ResumeGame()
+    {
+        PauseScreen.SetActive(false);
+        Time.timeScale = 1;
+    }
+    public void RestartGame()
+    {
+        PauseScreen.SetActive(false);
+        Time.timeScale = 1;
+        gameActive = false;
+        ResetGameplay();
+        RetryCurrentLevel();
+    }
+    public void GiveUp()
+    {
+        PauseScreen.SetActive(false);
+        gameActive = false;
+        Time.timeScale = 1;
+        ResetGameplay();
+    }
 }
