@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
-
+using TMPro;
 public class GameplayController : MonoBehaviour
 {
 
@@ -11,13 +11,18 @@ public class GameplayController : MonoBehaviour
     [SerializeField] private Sprite cardBackground;
     [SerializeField] private Sprite[] cardSprites;
     private List<Sprite> gameSprites = new List<Sprite>();
-
+    [Space(20)]
     [Header("Game State Tracking")]
     private List<Button> cards = new List<Button>();
     private bool isFirstGuess, isSecondGuess;
     private int totalGuesses, correctGuesses, totalMatchesRequired;
     private int firstGuessIndex, secondGuessIndex;
     private string firstGuessCardName, secondGuessCardName;
+    [Space(20)]
+    [Header("UI Data")]
+    public TextMeshProUGUI TargetGuess;
+    public TextMeshProUGUI CurrentGuess;
+
 
 
     private void Awake()
@@ -25,19 +30,20 @@ public class GameplayController : MonoBehaviour
         LoadCardSprites();
     }
 
-    private void Start()
+    public void StartGame()
     {
         InitializeCards();
         AddCardListeners();
         SetupGameCards();
         ShuffleCards(gameSprites);
         totalMatchesRequired = gameSprites.Count / 2;
+        TargetGuess.text = totalMatchesRequired.ToString();
     }
 
     private void LoadCardSprites()
     {
         // Path to be replaced when actual UI elements added
-        cardSprites = Resources.LoadAll<Sprite>("Sprites/PlaceHolders");
+        cardSprites = Resources.LoadAll<Sprite>("Sprites/Characters");
     }
 
     private void InitializeCards()
@@ -46,7 +52,7 @@ public class GameplayController : MonoBehaviour
         foreach (GameObject obj in cardObjects)
         {
             Button button = obj.GetComponent<Button>();
-            button.image.sprite = cardBackground;
+            //button.image.sprite = cardBackground;
             cards.Add(button);
         }
     }
@@ -74,15 +80,17 @@ public class GameplayController : MonoBehaviour
     private void HandleCardClick()
     {
         int cardIndex = int.Parse(EventSystem.current.currentSelectedGameObject.name);
-
+        Debug.Log("FirstF");
         if (!isFirstGuess)
         {
             FirstGuess(cardIndex);
+            Debug.Log("FirstF");
         }
         else if (!isSecondGuess)
         {
             SecondGuess(cardIndex);
             totalGuesses++;
+            CurrentGuess.text = totalGuesses.ToString();
             StartCoroutine(CheckMatch());
         }
     }
@@ -92,7 +100,11 @@ public class GameplayController : MonoBehaviour
         isFirstGuess = true;
         firstGuessIndex = index;
         firstGuessCardName = gameSprites[index].name;
-        cards[firstGuessIndex].image.sprite = gameSprites[firstGuessIndex];
+        //cards[firstGuessIndex].image.sprite = gameSprites[firstGuessIndex];
+        cards[firstGuessIndex].GetComponent<Animation>().Play("CardEntry");
+        cards[firstGuessIndex].GetComponent<CardData>().DisableDefaultImage(); //Changed
+        cards[firstGuessIndex].GetComponent<CardData>().CharacterImage.sprite = gameSprites[firstGuessIndex]; //Changed
+        Debug.Log("First");
     }
 
     private void SecondGuess(int index)
@@ -100,7 +112,10 @@ public class GameplayController : MonoBehaviour
         isSecondGuess = true;
         secondGuessIndex = index;
         secondGuessCardName = gameSprites[index].name;
-        cards[secondGuessIndex].image.sprite = gameSprites[secondGuessIndex];
+        //cards[secondGuessIndex].image.sprite = gameSprites[secondGuessIndex];
+        cards[secondGuessIndex].GetComponent<Animation>().Play("CardEntry");
+        cards[secondGuessIndex].GetComponent<CardData>().DisableDefaultImage(); //Changed
+        cards[secondGuessIndex].GetComponent<CardData>().CharacterImage.sprite = gameSprites[secondGuessIndex]; //Changed
     }
 
     private IEnumerator CheckMatch()
@@ -125,13 +140,17 @@ public class GameplayController : MonoBehaviour
     private void DisableMatchedCards()
     {
         cards[firstGuessIndex].interactable = false;
+        cards[firstGuessIndex].GetComponent<CardData>().CardsMatched();
         cards[secondGuessIndex].interactable = false;
+        cards[secondGuessIndex].GetComponent<CardData>().CardsMatched();
     }
 
     private void ResetUnmatchedCards()
     {
-        cards[firstGuessIndex].image.sprite = cardBackground;
-        cards[secondGuessIndex].image.sprite = cardBackground;
+        //cards[firstGuessIndex].image.sprite = cardBackground;
+        //cards[secondGuessIndex].image.sprite = cardBackground;
+        cards[firstGuessIndex].GetComponent<CardData>().ResetUnmatched();
+        cards[secondGuessIndex].GetComponent<CardData>().ResetUnmatched();
     }
 
     private void CheckGameCompletion()
