@@ -22,12 +22,25 @@ public class GameplayController : MonoBehaviour
     [Header("UI Data")]
     public TextMeshProUGUI TargetGuess;
     public TextMeshProUGUI CurrentGuess;
-
+    public TextMeshProUGUI scoreText;
+    public GameObject FinishScreen;
+    public GameObject FailedScreen;
+    [Space(20)]
+    [Header("Score Data")]
+    private int score = 0;
+    [SerializeField] private GameObject[] starImages;
+    private int maxScore, StarCount;
+    [Header("Timer Settings")]
+    [SerializeField] public float timeLimit = 30f;
+    [SerializeField] private TextMeshProUGUI timerText;
+    private float remainingTime;
+    public bool gameActive;
 
 
     private void Awake()
     {
         LoadCardSprites();
+        remainingTime = timeLimit;
     }
 
     public void StartGame()
@@ -37,9 +50,19 @@ public class GameplayController : MonoBehaviour
         SetupGameCards();
         ShuffleCards(gameSprites);
         totalMatchesRequired = gameSprites.Count / 2;
-        TargetGuess.text = totalMatchesRequired.ToString();
+        maxScore = totalMatchesRequired * 10;
+        gameActive = true;
+        remainingTime = timeLimit; // Set the initial timer value from the current level
+        UpdateTimerUI();
+        UpdateScoreUI();
     }
-
+    private void Update()
+    {
+        if (gameActive)
+        {
+            UpdateTimer();
+        }
+    }
     private void LoadCardSprites()
     {
         // Path to be replaced when actual UI elements added
@@ -126,6 +149,7 @@ public class GameplayController : MonoBehaviour
         {
             DisableMatchedCards();
             correctGuesses++;
+            IncreaseScore();
             CheckGameCompletion();
         }
         else
@@ -158,6 +182,8 @@ public class GameplayController : MonoBehaviour
         if (correctGuesses == totalMatchesRequired)
         {
             //finish game menu to be added here
+            StartCoroutine(ShowFinishScreen());
+            gameActive = false;
         }
     }
 
@@ -171,4 +197,79 @@ public class GameplayController : MonoBehaviour
             list[randomIndex] = temp;
         }
     }
+    private void IncreaseScore()
+    {
+        score += 10; // Increment score by 10 (or any other desired value)
+        UpdateScoreUI();
+    }
+
+    private void UpdateScoreUI()
+    {
+        if (scoreText != null)
+            scoreText.text = "Score: " + score.ToString();
+        if (TargetGuess != null)
+            TargetGuess.text = totalMatchesRequired.ToString();
+    }
+    private void AssignStarsBasedOnScore()
+    {
+        float scorePercentage = (float)score / maxScore;
+        int starCount = 0;
+
+        if (scorePercentage >= 0.8f) // 80% and above
+            starCount = 3;
+        else if (scorePercentage >= 0.5f) // 50-79%
+            starCount = 2;
+        else // Below 50%
+            starCount = 1;
+        Debug.Log("Score Percentage " + scorePercentage.ToString());
+        StarCount = starCount;
+    }
+    IEnumerator ShowFinishScreen()
+    {
+        FinishScreen.SetActive(true);
+        AssignStarsBasedOnScore();
+        yield return new WaitForSeconds(0.3f);
+        for (int i = 0; i < starImages.Length; i++)
+        {
+            if (i < StarCount)
+                starImages[i].SetActive(true);
+            else
+                starImages[i].SetActive(false);
+            yield return new WaitForSeconds(0.3f);
+        }
+    }
+    private void UpdateTimer()
+    {
+        remainingTime -= Time.deltaTime;
+        UpdateTimerUI();
+
+        if (remainingTime <= 0)
+        {
+            remainingTime = 0;
+            EndGame(false); // End the game with fail screen
+        }
+    }
+
+    private void UpdateTimerUI()
+    {
+        if (timerText != null)
+            timerText.text = "Time: " + Mathf.CeilToInt(remainingTime).ToString();
+    }
+
+    private void EndGame(bool win)
+    {
+        gameActive = false; // Stop the timer and game actions
+
+        if (win)
+        {
+            if (FinishScreen != null)
+                FinishScreen.SetActive(true);
+        }
+        else
+        {
+            if (FailedScreen != null)
+                FailedScreen.SetActive(true);
+        }
+    }
+
 }
