@@ -41,6 +41,8 @@ public class GameplayController : MonoBehaviour
     public LoadCards LevelLoader;
     public LevelData[] AllLevels;
     public int LoadedLevel;
+    [SerializeField]
+    AudioManager audioManager;
     private void Awake()
     {
         LoadCardSprites();
@@ -107,6 +109,7 @@ public class GameplayController : MonoBehaviour
     private void HandleCardClick()
     {
         int cardIndex = int.Parse(EventSystem.current.currentSelectedGameObject.name);
+        audioManager.Play("Click");
         if (!isFirstGuess)
         {
             FirstGuess(cardIndex);
@@ -154,11 +157,13 @@ public class GameplayController : MonoBehaviour
             correctGuesses++;
             IncreaseScore();
             CheckGameCompletion();
+            audioManager.Play("CorrectMatched");
         }
         else
         {
             yield return new WaitForSeconds(0.8f);
             ResetUnmatchedCards();
+            audioManager.Play("WrongMatched");
         }
 
         yield return new WaitForSeconds(0.4f);
@@ -239,6 +244,7 @@ public class GameplayController : MonoBehaviour
     IEnumerator ShowFinishScreen()
     {
         FinishScreen.SetActive(true);
+        audioManager.Play("Finish");
         AssignStarsBasedOnScore();
         ResetStarUI();
         yield return new WaitForSeconds(0.3f);
@@ -298,6 +304,7 @@ public class GameplayController : MonoBehaviour
         {
             if (FailedScreen != null)
                 FailedScreen.SetActive(true);
+            audioManager.Play("WrongMatched");
         }
     }
 
@@ -363,6 +370,7 @@ public class GameplayController : MonoBehaviour
     public void PauseGame()
     {
         PauseScreen.SetActive(true);
+        audioManager.Play("Click");
         Time.timeScale = 0;
     }
     public void ResumeGame()

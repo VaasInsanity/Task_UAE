@@ -13,8 +13,11 @@ public class MenuManager : MonoBehaviour
     bool datasaved;
     public int CurrentLevel;
     string LevelKey = "CurrentLevel";
+    [SerializeField]
+    AudioManager audioManager;
     private void Awake()
     {
+        audioManager.Play("BackgroundMusic");
         CurrentLevel = PlayerPrefs.GetInt(LevelKey, 0);
         LoadandApplyLevel();
     }

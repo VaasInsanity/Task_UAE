@@ -19,7 +19,8 @@ public class LoadCards : MonoBehaviour
     MenuManager menuManager;
     public LevelData[] AllLevels;
     public int LevelIndex;
-
+    [SerializeField]
+    AudioManager audioManager;
     private void Awake()
     {
         if(gridLayout == null)
@@ -50,6 +51,7 @@ public class LoadCards : MonoBehaviour
             GameObject flipCard = Instantiate(card);
             flipCard.name = "" + i;
             flipCard.transform.SetParent(gridPanel);
+            audioManager.Play("Card");
             yield return new WaitForSeconds(0.2f);
             flipCard.GetComponent<Button>().interactable = true;
         }
